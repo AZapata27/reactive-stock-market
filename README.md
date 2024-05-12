@@ -18,7 +18,7 @@ Sole purpose of this project is to educate.
 ### Anatomy
 
 - **Matching engine**
-    + [Matching Engine](src/main/java/com/github/schananas/reactivestockmarket/domain/engine/MatchingEngine.java) uses Max-Heap and Min-Heap
+    + [Matching Engine](src/main/java/com/zapata/reactivestockmarket/domain/engine/MatchingEngine.java) uses Max-Heap and Min-Heap
     + Time complexity for critical operations are as:
         + Add – O(log N)
         + Cancel – O(1)
@@ -136,15 +136,15 @@ So how can we reduce complexity and improve performance for high load? In this p
 
 ![Reactive shared](img/reactive_shared.svg)
 
-Using reactor pattern commands are de-multiplexed (see [CommandBus:80](src/main/java/com/github/schananas/reactivestockmarket/domain/bus/CommandBus.java)) to a single "flow" of execution. Word flow is used instead of thread here, as threads can arbitrarily be changed in Project Reactor, but that doesn't matter as we model our flow in such way that we know which components can be only accessed sequentially and which concurrently.
+Using reactor pattern commands are de-multiplexed (see [CommandBus:80](src/main/java/com/zapata/reactivestockmarket/domain/bus/CommandBus.java)) to a single "flow" of execution. Word flow is used instead of thread here, as threads can arbitrarily be changed in Project Reactor, but that doesn't matter as we model our flow in such way that we know which components can be only accessed sequentially and which concurrently.
 Then we place our components within this flow. Each component executes one intent/command at the time, like any synchronized component from blocking example would. Once command is executed, next is taken from flow and gets executed. There is also option to specify what is maximum time allowed to access component, preventing potential congestion. 
 Now components can be single threaded without any concurrency protection complexity.
 Once all steps from flow have been executed, user is asynchronously notified with response.
 
 **Reactive with parallel execution**
 
-So what if some components can be accessed in parallel? In case of this project, if two users are bidding for distinct assets/instruments we can execute their orders in parallel as assets are two logically separated components. (see [Book aggregate](src/main/java/com/github/schananas/reactivestockmarket/domain/Book.java))
-In this case we just multiplex flow again and split it to two separate flows, each executing commands and orders for distinct assets. (see [CommandBus:51](src/main/java/com/github/schananas/reactivestockmarket/domain/bus/CommandBus.java))
+So what if some components can be accessed in parallel? In case of this project, if two users are bidding for distinct assets/instruments we can execute their orders in parallel as assets are two logically separated components. (see [Book aggregate](src/main/java/com/zapata/reactivestockmarket/domain/Book.java))
+In this case we just multiplex flow again and split it to two separate flows, each executing commands and orders for distinct assets. (see [CommandBus:51](src/main/java/com/zapata/reactivestockmarket/domain/bus/CommandBus.java))
 
 ![Reactive non-shared](img/reactive_non_shared.svg)
 
@@ -157,7 +157,7 @@ Applying reactive pattern to our reactive stock market we get following flow:
 First step is to de-multiplex user commands to preserve order of commands and to deal easier with further parallelism and concurrency.
 Now we can multiplex pipeline for each aggregate id (instrument id), meaning we will execute commands for distinct assets in parallel.
 Now as we have parallel pipelines for distinct instruments, we remove most of the synchronisation from our components like Matching Engine.
-Question arises, why are [aggregate](src/main/java/com/github/schananas/reactivestockmarket/domain/BookAggregateRepository.java) and [query](src/main/java/com/github/schananas/reactivestockmarket/domain/query/BookQueryRepository.java) repository represented as non-shared components, when they are singletons which all pipelines can access concurrently?
+Question arises, why are [aggregate](src/main/java/com/zapata/reactivestockmarket/domain/BookAggregateRepository.java) and [query](src/main/java/com/github/schananas/reactivestockmarket/domain/query/BookQueryRepository.java) repository represented as non-shared components, when they are singletons which all pipelines can access concurrently?
 Both components use ConcurrentHashMap which in contract to SynchronizedMap is not locking whole map on update. Instead, ConcurrentHashMap is divided into segments and each segment maintains its own lock. Any thread that wants to enter into segment have to acquire that segments lock.
 Number of segments is decided by the parameter called `Config::DEFAULT_CONCURRENCY_LEVEL` which is passed while instantiating ConcurrentHashMap. As we multiplexed our pipelines per instrument id, we know that each pipleline will access map segments sequentialy, therefore whole pipleline remains lockless.
 
