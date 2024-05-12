@@ -1,13 +1,13 @@
 package com.zapata.reactivestockmarket.web;
 
-import com.zapata.reactivestockmarket.api.protobuf.OrderStatusResponse;
-import com.zapata.reactivestockmarket.api.protobuf.PlaceOrderRequest;
-import com.zapata.reactivestockmarket.api.protobuf.Trade;
 import com.zapata.reactivestockmarket.cqrs.Event;
 import com.zapata.reactivestockmarket.cqrs.SourcingEvent;
 import com.zapata.reactivestockmarket.domain.bus.CommandBus;
 import com.zapata.reactivestockmarket.domain.command.CancelOrderCommand;
 import com.zapata.reactivestockmarket.domain.command.MakeOrderCommand;
+import com.zapata.reactivestockmarket.domain.dtos.OrderStatusResponse;
+import com.zapata.reactivestockmarket.domain.dtos.PlaceOrderRequest;
+import com.zapata.reactivestockmarket.domain.dtos.Trade;
 import com.zapata.reactivestockmarket.domain.events.OrderAcceptedEvent;
 import com.zapata.reactivestockmarket.domain.query.BookQueryRepository;
 import com.zapata.reactivestockmarket.domain.query.OrderEntry;
@@ -54,7 +54,7 @@ public class MarketController {
      * @param request user request to place order
      * @return order status
      */
-    @PostMapping("/orders")
+    @PostMapping(value = "/orders", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Mono<OrderStatusResponse> placeOrder(@RequestBody PlaceOrderRequest request) {
         return commandBus.sendCommand(toMakeOrderCommand(request))
                          .cast(OrderAcceptedEvent.class)
@@ -119,32 +119,32 @@ public class MarketController {
     }
 
     private MakeOrderCommand toMakeOrderCommand(PlaceOrderRequest request) {
-        return new MakeOrderCommand(request.getAsset(),
+        return new MakeOrderCommand(request.asset(),
                                     UUID.randomUUID(),
-                                    OrderType.valueOf(request.getDirection().name()),
-                                    BigDecimal.valueOf(request.getAmount()),
-                                    BigDecimal.valueOf(request.getPrice()));
+                                    OrderType.valueOf(request.direction().name()),
+                                    BigDecimal.valueOf(request.amount()),
+                                    BigDecimal.valueOf(request.price()));
     }
 
     private OrderStatusResponse toOrderStatus(OrderEntry order) {
-        return OrderStatusResponse.newBuilder()
-                                  .setId(order.orderId())
-                                  .setTimestamp(order.entryTimestamp().toString())
-                                  .setAsset(order.asset())
-                                  .setAmount(order.amount().doubleValue())
-                                  .setPrice(order.price().doubleValue())
-                                  .setDirection(com.zapata.reactivestockmarket.api.protobuf.OrderType.valueOf(
+        return OrderStatusResponse.builder()
+                                  .id(order.orderId())
+                                  .timestamp(order.entryTimestamp().toString())
+                                  .asset(order.asset())
+                                  .amount(order.amount().doubleValue())
+                                  .price(order.price().doubleValue())
+                                  .direction(OrderType.valueOf(
                                           order.direction().name()))
-                                  .addAllTrades(order.trades().stream()
-                                                     .map(t -> Trade.newBuilder()
-                                                                    .setOrderId(t.orderId())
-                                                                    .setPrice(t.price()
+                                  .trades(order.trades().stream()
+                                                     .map(t -> Trade.builder()
+                                                                    .orderId(t.orderId())
+                                                                    .price(t.price()
                                                                                .doubleValue())
-                                                                    .setAmount(t.amount()
+                                                                    .amount(t.amount()
                                                                                 .doubleValue())
                                                                     .build())
-                                                     .collect(Collectors.toList()))
-                                  .setPendingAmount(order.pendingAmount().doubleValue())
+                                                     .toList())
+                                  .pendingAmount(order.pendingAmount().doubleValue())
                                   .build();
     }
 

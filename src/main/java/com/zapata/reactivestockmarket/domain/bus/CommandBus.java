@@ -3,6 +3,8 @@ package com.zapata.reactivestockmarket.domain.bus;
 import com.zapata.reactivestockmarket.cqrs.Command;
 import com.zapata.reactivestockmarket.cqrs.SourcingEvent;
 import com.zapata.reactivestockmarket.domain.BookAggregateRepository;
+import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -12,7 +14,6 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.function.Consumer;
-import javax.annotation.PreDestroy;
 
 import static com.zapata.reactivestockmarket.Config.DEFAULT_CONCURRENCY_LEVEL;
 
@@ -25,7 +26,6 @@ import static com.zapata.reactivestockmarket.Config.DEFAULT_CONCURRENCY_LEVEL;
  * <p>
  * Is fire and forget, canceling subscription will not change execution flow, but subscriber has option to "stay" and
  * get signaled once corresponding event has been materialized or if execution has failed.
- *
  */
 @Component
 public class CommandBus {
@@ -33,8 +33,8 @@ public class CommandBus {
     private final Logger logger = LoggerFactory.getLogger(CommandBus.class);
 
     private final Sinks.Many<CommandWrapper> commandExecutor = Sinks.many()
-                                                                    .unicast()
-                                                                    .onBackpressureBuffer();
+            .unicast()
+            .onBackpressureBuffer();
 
     private final Disposable commandExecutorDisposable;
 
@@ -46,23 +46,19 @@ public class CommandBus {
     public CommandBus(BookAggregateRepository aggregateRepository) {
 
         commandExecutorDisposable = commandExecutor.asFlux()
-                                                   .doOnNext(n -> logger.debug("{} being executed....",
-                                                                               n.getCommand().getClass()
-                                                                                .getSimpleName()))
-                                                   .groupBy(cw -> cw.getCommand().aggregateId()) //multiplex
-                                                   .flatMap(aggregateCommands -> aggregateCommands //and execute distinct assets in parallel
-                                                           .concatMap(cmd -> aggregateRepository
-                                                                   .load(cmd.getCommand().aggregateId())
-                                                                   .flatMap(aggregate -> aggregate.routeCommand(cmd.getCommand())
-                                                                                                  .flatMap(event -> aggregate.routeEvent(
-                                                                                                                                     event)
-                                                                                                                             .then(cmd.signalMaterialized(
-                                                                                                                                     event)))
-                                                                                                  .doOnError(cmd::signalError)
-
-
-                                                                   )), DEFAULT_CONCURRENCY_LEVEL)
-                                                   .subscribe();
+                .doOnNext(n -> logger.debug("{} being executed....",
+                        n.getCommand().getClass().getSimpleName()))
+                .groupBy(cw -> cw.getCommand().aggregateId()) //multiplex
+                .flatMap(aggregateCommands -> aggregateCommands //and execute distinct assets in parallel
+                        .concatMap(cmd -> aggregateRepository
+                                .load(cmd.getCommand().aggregateId())
+                                .flatMap(aggregate -> aggregate.routeCommand(cmd.getCommand())
+                                        .flatMap(event -> aggregate.routeEvent(event)
+                                                .then(cmd.signalMaterialized(event)))
+                                        .doOnError(cmd::signalError)
+                                )
+                        ), DEFAULT_CONCURRENCY_LEVEL)
+                .subscribe();
     }
 
     /**
@@ -79,12 +75,12 @@ public class CommandBus {
             Sinks.One<SourcingEvent> actionResult = Sinks.one();
             //de-multiplexes multiple subscriptions by publishing commands to a single flow
             return Mono.<Void>fromRunnable(() -> commandExecutor.emitNext(new CommandWrapper(command,
-                                                                                             actionResult::tryEmitValue,
-                                                                                             actionResult::tryEmitError),
-                                                                          (signalType, emitResult) -> emitResult
-                                                                                  .equals(Sinks.EmitResult.FAIL_NON_SERIALIZED)))
-                       .subscribeOn(Schedulers.parallel())
-                       .then(actionResult.asMono());
+                                    actionResult::tryEmitValue,
+                                    actionResult::tryEmitError),
+                            (signalType, emitResult) -> emitResult
+                                    .equals(Sinks.EmitResult.FAIL_NON_SERIALIZED)))
+                    .subscribeOn(Schedulers.parallel())
+                    .then(actionResult.asMono());
         });
     }
 
@@ -99,6 +95,7 @@ public class CommandBus {
 
     private static class CommandWrapper {
 
+        @Getter
         private final Command command;
         private final Consumer<SourcingEvent> signalDone;
         private final Consumer<Throwable> signalError;
@@ -109,10 +106,6 @@ public class CommandBus {
             this.command = command;
             this.signalDone = action;
             this.signalError = signalError;
-        }
-
-        public Command getCommand() {
-            return command;
         }
 
         public Mono<Void> signalMaterialized(SourcingEvent event) {

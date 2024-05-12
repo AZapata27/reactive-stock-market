@@ -1,14 +1,14 @@
 package com.zapata.reactivestockmarket.integration;
 
-import com.zapata.reactivestockmarket.api.protobuf.OrderStatusResponse;
-import com.zapata.reactivestockmarket.api.protobuf.OrderType;
 import com.zapata.reactivestockmarket.ReactiveStockMarketApplication;
+import com.zapata.reactivestockmarket.domain.dtos.OrderStatusResponse;
+import com.zapata.reactivestockmarket.domain.query.OrderType;
 import org.junit.*;
 import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -34,7 +34,7 @@ public class IntegrationTest {
                 "amount": 1.0,
                 "direction": "SELL"
             }
-                        """.stripIndent();
+                       \s""".stripIndent();
 
     private final String SIMPLE_BUY_ORDER = """
             {
@@ -43,7 +43,7 @@ public class IntegrationTest {
                     "amount": 0.25,
                     "direction": "BUY"
             }
-                                """.stripIndent();
+                               \s""".stripIndent();
     private final String BTC_SELL_ORDER = """
             {
                 "asset": "BTC",
@@ -51,7 +51,7 @@ public class IntegrationTest {
                 "amount": 1.0,
                 "direction": "SELL"
             }
-                        """.stripIndent();
+                       \s""".stripIndent();
     private final String BTC_BUY_ORDER = """
             {
                 "asset": "BTC",
@@ -59,7 +59,7 @@ public class IntegrationTest {
                     "amount": 1,
                     "direction": "BUY"
             }
-                                """.stripIndent();
+                               \s""".stripIndent();
     private final String SOL_SELL_ORDER = """
             {
                 "asset": "SOL",
@@ -67,7 +67,7 @@ public class IntegrationTest {
                 "amount": 1.0,
                 "direction": "SELL"
             }
-                        """.stripIndent();
+                       \s""".stripIndent();
     private final String SOL_BUY_ORDER = """
             {
                 "asset": "SOL",
@@ -75,7 +75,7 @@ public class IntegrationTest {
                     "amount": 1,
                     "direction": "BUY"
             }
-                                """.stripIndent();
+                               \s""".stripIndent();
     @LocalServerPort
     private int port;
     private WebClient client;
@@ -96,25 +96,25 @@ public class IntegrationTest {
                                     .body(Mono.just(SIMPLE_SELL_ORDER), String.class).header(HttpHeaders.CONTENT_TYPE,
                                                                                              MediaType.APPLICATION_JSON_VALUE)
                                     .retrieve().bodyToMono(OrderStatusResponse.class)
-                                    .doOnNext(or -> id.set(or.getId())))
+                                    .doOnNext(or -> id.set(or.id())))
                     .expectNextMatches(response ->
-                                               response.getAsset().equals("BTC")
-                                                       && response.getPrice() == 43251.00
-                                                       && response.getAmount() == 1.0
-                                                       && response.getDirection().equals(OrderType.SELL)
-                                                       && response.getPendingAmount() == 1.0)
+                                               response.asset().equals("BTC")
+                                                       && response.price() == 43251.00
+                                                       && response.amount() == 1.0
+                                                       && response.direction().equals(OrderType.SELL)
+                                                       && response.pendingAmount() == 1.0)
                     .verifyComplete();
 
         StepVerifier.create((client.get()
-                                   .uri("/orders/" + id + "/"))
+                                   .uri("/orders/" + id ))
                                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                     .retrieve().bodyToMono(OrderStatusResponse.class))
                     .expectNextMatches(response ->
-                                               response.getAsset().equals("BTC")
-                                                       && response.getPrice() == 43251.00
-                                                       && response.getAmount() == 1.0
-                                                       && response.getDirection().equals(OrderType.SELL)
-                                                       && response.getPendingAmount() == 1.0)
+                                               response.asset().equals("BTC")
+                                                       && response.price() == 43251.00
+                                                       && response.amount() == 1.0
+                                                       && response.direction().equals(OrderType.SELL)
+                                                       && response.pendingAmount() == 1.0)
                     .verifyComplete();
     }
 
@@ -126,13 +126,13 @@ public class IntegrationTest {
                                     .body(Mono.just(SIMPLE_SELL_ORDER), String.class).header(HttpHeaders.CONTENT_TYPE,
                                                                                              MediaType.APPLICATION_JSON_VALUE)
                                     .retrieve().bodyToMono(OrderStatusResponse.class)
-                                    .doOnNext(or -> id.set(or.getId())))
+                                    .doOnNext(or -> id.set(or.id())))
                     .expectNextMatches(response ->
-                                               response.getAsset().equals("BTC")
-                                                       && response.getPrice() == 43251.00
-                                                       && response.getAmount() == 1.0
-                                                       && response.getDirection().equals(OrderType.SELL)
-                                                       && response.getPendingAmount() == 1.0)
+                                               response.asset().equals("BTC")
+                                                       && response.price() == 43251.00
+                                                       && response.amount() == 1.0
+                                                       && response.direction().equals(OrderType.SELL)
+                                                       && response.pendingAmount() == 1.0)
                     .verifyComplete();
 
         StepVerifier.create((client.post()
@@ -152,13 +152,13 @@ public class IntegrationTest {
                                     .body(Mono.just(SIMPLE_SELL_ORDER), String.class)
                                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                     .retrieve().bodyToMono(OrderStatusResponse.class)
-                                    .doOnNext(or -> id.set(or.getId())))
+                                    .doOnNext(or -> id.set(or.id())))
                     .expectNextMatches(response ->
-                                               response.getAsset().equals("BTC")
-                                                       && response.getPrice() == 43251.00
-                                                       && response.getAmount() == 1.0
-                                                       && response.getDirection().equals(OrderType.SELL)
-                                                       && response.getPendingAmount() == 1.0)
+                                               response.asset().equals("BTC")
+                                                       && response.price() == 43251.00
+                                                       && response.amount() == 1.0
+                                                       && response.direction().equals(OrderType.SELL)
+                                                       && response.pendingAmount() == 1.0)
                     .verifyComplete();
 
         StepVerifier.create((client.post()
@@ -166,28 +166,28 @@ public class IntegrationTest {
                                     .body(Mono.just(SIMPLE_BUY_ORDER), String.class)
                                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                     .retrieve().bodyToMono(OrderStatusResponse.class)
-                                    .doOnNext(or -> id2.set(or.getId())))
+                                    .doOnNext(or -> id2.set(or.id())))
                     .expectNextMatches(response ->
-                                               response.getAsset().equals("BTC")
-                                                       && response.getPrice() == 43252.00
-                                                       && response.getAmount() == 0.25
-                                                       && response.getDirection().equals(OrderType.BUY))
+                                               response.asset().equals("BTC")
+                                                       && response.price() == 43252.00
+                                                       && response.amount() == 0.25
+                                                       && response.direction().equals(OrderType.BUY))
                     .verifyComplete();
 
         StepVerifier.create((client.get()
-                                   .uri("/orders/" + id + "/"))
+                                   .uri("/orders/" + id ))
                                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                     .retrieve().bodyToMono(OrderStatusResponse.class))
                     .expectNextMatches(response ->
-                                               response.getAsset().equals("BTC")
-                                                       && response.getPrice() == 43251.00
-                                                       && response.getAmount() == 1.0
-                                                       && response.getDirection().equals(OrderType.SELL)
-                                                       && response.getPendingAmount() == 0.75
-                                                       && response.getTradesList().stream()
-                                                                  .anyMatch(t -> t.getOrderId() == id2.get()
-                                                                          && t.getAmount() == 0.25
-                                                                          && t.getPrice() == 43251.0
+                                               response.asset().equals("BTC")
+                                                       && response.price() == 43251.00
+                                                       && response.amount() == 1.0
+                                                       && response.direction().equals(OrderType.SELL)
+                                                       && response.pendingAmount() == 0.75
+                                                       && response.trades().stream()
+                                                                  .anyMatch(t -> t.orderId() == id2.get()
+                                                                          && t.amount() == 0.25
+                                                                          && t.price() == 43251.0
                                                                   )
                     )
                     .verifyComplete();

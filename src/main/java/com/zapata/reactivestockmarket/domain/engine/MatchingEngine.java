@@ -36,7 +36,9 @@ public class MatchingEngine {
     private final TreeSet<Order> asks;
     private final Map<Long, Order> orders;
     private final AtomicLong term;
+
     Sinks.Many<UpdateEvent> engineEventSink = Sinks.many().multicast().onBackpressureBuffer();
+
     Flux<UpdateEvent> engineEventFlux = engineEventSink.asFlux()
             .doOnNext(n -> logger.info(n.toString()))
             .publish()
