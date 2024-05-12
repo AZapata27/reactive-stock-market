@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.zapata.reactivestockmarket'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '21'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web Starter
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // Spring WebFlux
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // Reactor Test
+    testImplementation 'io.projectreactor:reactor-test:3.4.17'
+
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    // JUnit Vintage Engine
+    testImplementation 'org.junit.vintage:junit-vintage-engine'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

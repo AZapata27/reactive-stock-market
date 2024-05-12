@@ -49,7 +49,7 @@ Sole purpose of this project is to educate.
 
 
 - **Protobuf**
-    + Describes API schema once, in proto format (see [api.proto](src/main/resources/api.proto))
+    + Describes API schema once, in proto format (see [api.proto](src/main/proto/api.proto))
     + Supports backward compatibility
     + The Protocol Buffers specification is implemented in many languages
     + Less Boilerplate Code - auto generated code
